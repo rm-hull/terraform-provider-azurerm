@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Azure/azure-sdk-for-go/services/containerservice/mgmt/2020-09-01/containerservice"
+	"github.com/Azure/azure-sdk-for-go/services/containerservice/mgmt/2020-11-01/containerservice"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
@@ -152,9 +152,90 @@ func schemaKubernetesAddOnProfiles() *schema.Schema {
 						},
 					},
 				},
+
+				"pod_identity": {
+					Type:     schema.TypeList,
+					MaxItems: 1,
+					Optional: true,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"enabled": {
+								Type:     schema.TypeBool,
+								Required: true,
+							},
+							"pod_identities": {
+								Type: schema.TypeList,
+								Elem: &schema.Resource{
+									Schema: map[string]*schema.Schema{
+										"name": {
+											Type:     schema.TypeString,
+											Computed: true,
+										},
+										"namespace": {
+											Type:     schema.TypeString,
+											Computed: true,
+										},
+										"user_assigned_identity_id": {
+											Type:     schema.TypeList,
+											Computed: true,
+											Elem: &schema.Resource{
+												Schema: map[string]*schema.Schema{
+													"client_id": {
+														Type:     schema.TypeString,
+														Computed: true,
+													},
+													"object_id": {
+														Type:     schema.TypeString,
+														Computed: true,
+													},
+													"user_assigned_identity_id": {
+														Type:     schema.TypeString,
+														Computed: true,
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+
+							"identity_exceptions": {
+								Type: schema.TypeList,
+								Elem: &schema.Resource{
+									Schema: map[string]*schema.Schema{
+										"name": {
+											Type:     schema.TypeString,
+											Computed: true,
+										},
+										"namespace": {
+											Type:     schema.TypeString,
+											Computed: true,
+										},
+										"pod_labels": {
+											Type:         schema.TypeMap,
+											Optional:     true,
+											ValidateFunc: Validate,
+											Elem: &schema.Schema{
+												Type: schema.TypeString,
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
 			},
 		},
 	}
+}
+
+func expandKubernetesPodIdentityProfile(input []interface{}) (*containerservice.ManagedClusterPodIdentityProfile, error) {
+	profile := containerservice.ManagedClusterPodIdentityProfile{
+		Enabled: utils.Bool(false),
+	}
+
+	return profile
 }
 
 func expandKubernetesAddOnProfiles(input []interface{}, env azure.Environment) (*map[string]*containerservice.ManagedClusterAddonProfile, error) {
